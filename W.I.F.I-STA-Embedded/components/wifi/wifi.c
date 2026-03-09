@@ -5,7 +5,6 @@ static int retryCounts = 0;
 static const char* TAG = "WiFi";
 
 uint8_t TX_MAC_ADDRESS[6] = {0x24, 0x6F, 0x28, 0xAB, 0xCD, 0xEF};
-QueueHandle_t csi_queue;
 
 static void wifiHandler(void *args, esp_event_base_t eventBase, int32_t eventId, void* eventData) {
     switch(eventId) {
@@ -44,7 +43,7 @@ static void wifiHandler(void *args, esp_event_base_t eventBase, int32_t eventId,
     }
 }
 
-esp_err_t wifiInit() {
+esp_err_t wifiInit(void) {
     esp_err_t err;
     wifiEventGroup = xEventGroupCreate();
 
@@ -104,7 +103,7 @@ esp_err_t wifiInit() {
     return ESP_OK;
 }
 
-void csi_callback(void *ctx, wifi_csi_info_t *data) {
+static void csi_callback(void *ctx, wifi_csi_info_t *data) {
     uint8_t *sender_mac = data->mac; 
     csi_packet_t packet;
 
@@ -114,4 +113,22 @@ void csi_callback(void *ctx, wifi_csi_info_t *data) {
 
     memcpy(packet.raw_data, data->buf, 128);
     xQueueSend(csi_queue, &packet, 0);
+}
+
+static void csi_data_calculate(void* pvParameters) {
+    csi_packet_t packet;
+    csi_queue = (QueueHandle_t)pvParameters;
+    
+    while(1) {
+        if(xQueueReceive(csi_queue, &packet, portMAX_DELAY)) {
+            for(int i = 0; i < 64; i++) {
+                int8_t imaginary = packet.raw_data[i * 2];     
+                int8_t real = packet.raw_data[i * 2 + 1];      
+
+                float amplitude = sqrt((real * real) + (imaginary * imaginary));
+                printf("%.2f,", amplitude);
+            }
+            printf("\n"); 
+        }
+    }
 }

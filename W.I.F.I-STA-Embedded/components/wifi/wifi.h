@@ -31,6 +31,9 @@ typedef struct {
     int8_t raw_data[128]; 
 } csi_packet_t;
 
-esp_err_t wifiInit();
+extern QueueHandle_t csi_queue;
+
+esp_err_t wifiInit(void);
 static void wifiHandler(void *args, esp_event_base_t eventBase, int32_t eventId, void* eventData);
-void csi_callback(void *ctx, wifi_csi_info_t *data);
+static void csi_callback(void *ctx, wifi_csi_info_t *data);
+static void csi_data_calculate(void* pvParameters);
