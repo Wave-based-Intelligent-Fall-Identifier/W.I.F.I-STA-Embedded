@@ -1,8 +1,7 @@
 #include "espnowSTA.h"
 
 // temp MAC addr
-uint8_t TX_MAC_ADDRESS[6] = {0x24, 0x6F, 0x28, 0xAB, 0xCD, 0xEF}; 
-
+extern uint8_t TX_MAC_ADDRESS[6];
 static const char *TAG = "ESPNOW-RX";
 
 void espnow_recv_cb(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int data_len) {
