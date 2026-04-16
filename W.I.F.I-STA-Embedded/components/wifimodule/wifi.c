@@ -19,7 +19,7 @@ static void wifiHandler(void *args, esp_event_base_t eventBase, int32_t eventId,
         case WIFI_EVENT_STA_CONNECTED:
         {
             ESP_LOGI(TAG, "WiFi STA 연결됨 ...");
-            xEventGroupSetBits(wifiEventGroup, CONNECTED_BIT);
+            xEventGroupSet(wifiEventGroup, CONNECTED_BIT);
             retryCounts = 0;
         }   
         break;
@@ -96,6 +96,19 @@ esp_err_t wifiInit(void) {
 
     ESP_LOGI(TAG, "WiFi 초기화 성공, 연결 대기 중");
     EventBits_t bits = xEventGroupWaitBits(wifiEventGroup, GOT_IP_BIT, pdFALSE, pdFALSE, portMAX_DELAY);
+
+    if (bits & GOT_IP_BIT) {
+        ESP_LOGI(TAG, "WiFi 연결 성공, IP획득");
+        return ESP_OK;
+    } 
+    else if (bits & FAIL_BIT) {
+        ESP_LOGE(TAG, "WiFi 연결 실패");
+        return ESP_FAIL;
+    } 
+    else {
+        ESP_LOGE(TAG, "예상치 못한 에러 발생");
+        return ESP_FAIL;
+    }
 
     return ESP_OK;
 }

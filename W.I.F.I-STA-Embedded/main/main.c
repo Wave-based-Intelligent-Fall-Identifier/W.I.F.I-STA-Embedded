@@ -31,3 +31,5 @@ void app_main(void) {
 
     ESP_LOGI(TAG, "설정 완료 [6/6]...");
 }
+
+// CSI 데이터 가공 코드
