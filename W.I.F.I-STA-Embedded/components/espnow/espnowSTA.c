@@ -1,53 +1,7 @@
 #include "espnowSTA.h"
 
 // temp MAC addr
-extern uint8_t TX_MAC_ADDRESS[6];
 static const char *TAG = "ESPNOW-RX";
-
-typedef struct {
-    float amplitude[64];
-    uint16_t len;
-} csi_packet_t;
-
-void espnow_recv_cb(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int data_len) {
-    if (data_len == sizeof(espnow_payload_t)) {
-        espnow_payload_t *payload = (espnow_payload_t *)data;
-        
-        if (payload->command == 1) {
-            ESP_LOGI(TAG, "'1' 수신, 슬립 모드 해제");
-        }
-    }
-}
-
-void csi_rx_cb(void *ctx, wifi_csi_info_t *info) {
-    if (!info || !info->buf) {
-        return;
-    }
-
-    uint16_t len = info->len;
-
-    push_csi_data(info, len);
-}
-
-void push_csi_data(wifi_csi_info_t *info, uint16_t *len) {
-    csi_packet_t packet = {0};
-
-    int8_t *csi_data = info->buf;
-
-    int index = 0;
-
-    for(int i = 0; i+1 < len; i += 2) {
-        int8_t real = csi_data[i]; 
-        int8_t imag = csi_data[i+1]; 
-        
-        packet.amplitude[index] = sqrt((real * real) + (imag * imag));
-        printf("%.2f\n", packet.amplitude[index]); 
-
-        index++;
-    }
-    
-    packet.len = index;
-}
 
 esp_err_t espnow_init_setup(void) {
     esp_err_t err = esp_now_init();
@@ -70,7 +24,6 @@ esp_err_t espnow_init_setup(void) {
     // };
     
     // ESP_ERROR_CHECK(esp_wifi_set_csi_config(&csi_config));
-    ESP_ERROR_CHECK(esp_wifi_set_csi(true)); 
     ESP_LOGI(TAG, "CSI 파동 수집 세팅 완료!");
     
     return ESP_OK;

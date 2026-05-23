@@ -5,11 +5,10 @@ static int retryCounts = 0;
 static const char* TAG = "WiFi";
 QueueHandle_t csi_queue;
 
-uint8_t TX_MAC_ADRESS[6];
-esp_wifi_get_mac(WIFI_IF_STA, mac);
-
-printf("%02X:%02X:%02X:%02X:%02X:%02X\n",
-        mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+//printf된 TX MAC ADDRESS 값 삽입
+static const uint8_t TX_MAC_ADDRESS[6] = {
+    0x34, 0x85, 0x18, 0xAA, 0xBB, 0xCC
+};
 
 static void wifiHandler(void *args, esp_event_base_t eventBase, int32_t eventId, void* eventData) {
     switch(eventId) {
@@ -75,6 +74,13 @@ esp_err_t wifiInit(void) {
         return err;
     }
 
+    uint8_t mac[6];
+
+    esp_wifi_get_mac(WIFI_IF_STA, mac);
+
+    printf("%02X:%02X:%02X:%02X:%02X:%02X\n",
+            mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
     
     esp_event_handler_instance_t instance_any_id;
     esp_event_handler_instance_t instance_got_ip;
@@ -91,7 +97,7 @@ esp_err_t wifiInit(void) {
         return err;
     }
 
-    wifi_config_t wifi_config;    
+    wifi_config_t wifi_config = {0};    
     strcpy((char *)wifi_config.sta.ssid, WIFI_SSID);
     strcpy((char *)wifi_config.sta.password, WIFI_PASS);
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
@@ -105,18 +111,24 @@ esp_err_t wifiInit(void) {
 }
 
 void csi_callback(void *ctx, wifi_csi_info_t *data) {
-    if (csi_queue == NULL) {
+    if (!data || !data->buf || csi_queue == NULL) {
         return;
     }
 
-    uint8_t *sender_mac = data->mac; 
-    csi_packet_t packet;
+    uint8_t *sender_mac = data->mac;
 
     if (memcmp(TX_MAC_ADDRESS, sender_mac, 6) != 0) {
         return; 
     }
 
-    memcpy(packet.raw_data, data->buf, 128);
+    csi_packet_t packet = {0};
+    packet.len = data->len;
+    
+    if (packet.len > 128) {
+        packet.len = 128;
+    }
+
+    memcpy(packet.raw_data, data->buf, packet.len);
     xQueueSend(csi_queue, &packet, 0);
 }
 
@@ -125,9 +137,9 @@ void csi_data_calculate(void* pvParameters) {
     
     while(1) {
         if(xQueueReceive(csi_queue, &packet, portMAX_DELAY)) {
-            for(int i = 0; i < 64; i++) {
-                int8_t imaginary = packet.raw_data[i * 2];     
-                int8_t real = packet.raw_data[i * 2 + 1];      
+            for(int i = 0; i+1 < packet.len; i+=2) {
+                int8_t real = packet.raw_data[i];
+                int8_t imaginary = packet.raw_data[i + 1];      
 
                 float amplitude = sqrt((real * real) + (imaginary * imaginary));
                 printf("%.2f,", amplitude);
