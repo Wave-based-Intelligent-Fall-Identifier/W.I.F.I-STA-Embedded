@@ -4,6 +4,11 @@
 extern uint8_t TX_MAC_ADDRESS[6];
 static const char *TAG = "ESPNOW-RX";
 
+typedef struct {
+    float amplitude[64];
+    uint16_t len;
+} csi_packet_t;
+
 void espnow_recv_cb(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int data_len) {
     if (data_len == sizeof(espnow_payload_t)) {
         espnow_payload_t *payload = (espnow_payload_t *)data;
@@ -19,16 +24,29 @@ void csi_rx_cb(void *ctx, wifi_csi_info_t *info) {
         return;
     }
 
-    int8_t *csi_data = info->buf;
     uint16_t len = info->len;
 
-    for(int i = 0; i < len; i += 2) {
+    push_csi_data(info, len);
+}
+
+void push_csi_data(wifi_csi_info_t *info, uint16_t *len) {
+    csi_packet_t packet = {0};
+
+    int8_t *csi_data = info->buf;
+
+    int index = 0;
+
+    for(int i = 0; i+1 < len; i += 2) {
         int8_t real = csi_data[i]; 
         int8_t imag = csi_data[i+1]; 
         
-        float amplitude = sqrt((real * real) + (imag * imag));
-        printf("%.2f\n", amplitude); 
+        packet.amplitude[index] = sqrt((real * real) + (imag * imag));
+        printf("%.2f\n", packet.amplitude[index]); 
+
+        index++;
     }
+    
+    packet.len = index;
 }
 
 esp_err_t espnow_init_setup(void) {
