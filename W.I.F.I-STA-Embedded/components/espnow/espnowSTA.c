@@ -3,6 +3,21 @@
 // temp MAC addr
 static const char *TAG = "ESPNOW-RX";
 
+static const uint8_t BROADCAST_MAC[6] = {
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF
+};
+
+static uint8_t paired_rx_mac[6] = {0};
+static bool is_paired = false;
+
+typedef struct {
+    uint8_t type;
+} espnow_request_pairing_t;
+
+#define PAIRING_REQUEST 1
+#define PAIRING_RESPONSE 2
+
+
 esp_err_t espnow_init_setup(void) {
     esp_err_t err = esp_now_init();
     if (err != ESP_OK) {
@@ -25,6 +40,43 @@ esp_err_t espnow_init_setup(void) {
     
     // ESP_ERROR_CHECK(esp_wifi_set_csi_config(&csi_config));
     ESP_LOGI(TAG, "CSI 파동 수집 세팅 완료!");
+
+    ESP_ERROR_CHECK(espnow_add_peer(BROADCAST_MAC));
     
     return ESP_OK;
+}
+
+esp_err_t espnow_addr_peer(const uint8_t *mac) {
+    esp_now_peer_info_t peer = {0};
+
+    memcpy(peer.peer_addr, mac, 6);
+
+    peer.channel = 0;
+    peer.ifidx = WIFI_IF_STA;
+    peer.encrypt = false;
+
+    return esp_now_addr_peer(&peer);
+}
+
+esp_err_t espnow_send_pairing_request() {
+    espnow_request_pairing_t packet = {.type = PAIRING_REQUEST};
+
+    return esp_now_send(BROADCAST_MAC, (uint8_t *)&packet, sizeof(packet));
+}
+
+void espnow_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t *data, int data_len) {
+    if (!recv_info || !data || data_len != sizeof(espnow_pairing_packet_t)) {
+        return;
+    }
+
+    espnow_request_pairing_t *packet = (espnow_pairing_packet_t *)data;
+
+    if (packet->type == PAIRING_RESPONSE) {
+        memcpy(paired_rx_mac, recv_info->src_addr, 6);
+        is_paired = true;
+
+        espnow_addr_peer(paired_rx_mac);
+
+        ESP_LOGI(TAG, "RX 페어링 완료");
+    }
 }

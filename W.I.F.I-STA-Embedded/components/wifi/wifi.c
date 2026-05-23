@@ -74,6 +74,8 @@ esp_err_t wifiInit(void) {
         return err;
     }
 
+    
+    static bool is_paired = false;
     uint8_t mac[6];
 
     esp_wifi_get_mac(WIFI_IF_STA, mac);
@@ -115,7 +117,7 @@ void csi_callback(void *ctx, wifi_csi_info_t *data) {
         return;
     }
 
-    uint8_t *sender_mac = data->mac;
+    const uint8_t*sender_mac = data->mac;
 
     if (memcmp(TX_MAC_ADDRESS, sender_mac, 6) != 0) {
         return; 
