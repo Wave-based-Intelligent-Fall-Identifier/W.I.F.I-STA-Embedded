@@ -5,7 +5,11 @@ static int retryCounts = 0;
 static const char* TAG = "WiFi";
 QueueHandle_t csi_queue;
 
-uint8_t TX_MAC_ADDRESS[6] = {0x24, 0x6F, 0x28, 0xAB, 0xCD, 0xEF};
+uint8_t TX_MAC_ADRESS[6];
+esp_wifi_get_mac(WIFI_IF_STA, mac);
+
+printf("%02X:%02X:%02X:%02X:%02X:%02X\n",
+        mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
 static void wifiHandler(void *args, esp_event_base_t eventBase, int32_t eventId, void* eventData) {
     switch(eventId) {
@@ -26,9 +30,9 @@ static void wifiHandler(void *args, esp_event_base_t eventBase, int32_t eventId,
 
         case WIFI_EVENT_STA_DISCONNECTED:
         {
-           ESP_LOGW(TAG, "연결 재시도... (횟수 : %d)", retryCounts);
-           esp_wifi_connect();
-           retryCounts++;
+            ESP_LOGW(TAG, "연결 재시도... (횟수 : %d)", retryCounts);
+            esp_wifi_connect();
+            retryCounts++;
         }
         break;
 
@@ -57,7 +61,7 @@ esp_err_t wifiInit(void) {
         ESP_ERROR_CHECK(nvs_flash_erase());
         err = nvs_flash_init();
     }
-   
+
     if(err != ESP_OK) {
         ESP_LOGE(TAG, "WiFi 초기화 실패");
         return err;
