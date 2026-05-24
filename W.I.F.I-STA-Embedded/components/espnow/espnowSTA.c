@@ -55,7 +55,7 @@ esp_err_t espnow_addr_peer(const uint8_t *mac) {
     peer.ifidx = WIFI_IF_STA;
     peer.encrypt = false;
 
-    return esp_now_addr_peer(&peer);
+    return esp_now_add_peer(&peer);
 }
 
 esp_err_t espnow_send_pairing_request() {
@@ -69,13 +69,18 @@ void espnow_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t *data, i
         return;
     }
 
-    espnow_request_pairing_t *packet = (espnow_pairing_packet_t *)data;
+    espnow_pairing_packet_t *packet = (espnow_pairing_packet_t *)data;
 
     if (packet->type == PAIRING_RESPONSE) {
         memcpy(paired_rx_mac, recv_info->src_addr, 6);
-        is_paired = true;
 
-        espnow_addr_peer(paired_rx_mac);
+        esp_err_t add_err = espnow_addr_peer(paired_rx_mac);
+        if (add_err != ESP_OK) {
+            ESP_LOGE(TAG, "RX 피어 등록 실패 : %s", esp_err_to_name(add_err));
+            return;
+        }
+        
+        is_paired = true;
 
         ESP_LOGI(TAG, "RX 페어링 완료");
     }

@@ -29,7 +29,7 @@ void app_main(void) {
     ESP_LOGI(TAG, "페어링 중..[5/7]");
     ESP_ERROR_CHECK(espnow_send_pairing_request());
     
-    ESP_LOGI(TAG, "콜백함수 등록 및 CSI 활성 [5/7]...");
+    ESP_LOGI(TAG, "콜백함수 등록 및 CSI 활성 [6/7]...");
     ESP_ERROR_CHECK(esp_wifi_set_csi_rx_cb(&csi_callback, NULL));
     ESP_ERROR_CHECK(esp_wifi_set_csi(true));
 
