@@ -1,22 +1,16 @@
 #include "espnowSTA.h"
 
+#define PAIRING_REQUEST 1
+#define PAIRING_RESPONSE 2
+
 // temp MAC addr
 static const char *TAG = "ESPNOW-RX";
 
 static const uint8_t BROADCAST_MAC[6] = {
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF
 };
-
 static uint8_t paired_rx_mac[6] = {0};
 static bool is_paired = false;
-
-typedef struct {
-    uint8_t type;
-} espnow_request_pairing_t;
-
-#define PAIRING_REQUEST 1
-#define PAIRING_RESPONSE 2
-
 
 esp_err_t espnow_init_setup(void) {
     esp_err_t err = esp_now_init();
@@ -46,7 +40,7 @@ esp_err_t espnow_init_setup(void) {
     return ESP_OK;
 }
 
-esp_err_t espnow_addr_peer(const uint8_t *mac) {
+esp_err_t espnow_add_peer(const uint8_t *mac) {
     esp_now_peer_info_t peer = {0};
 
     memcpy(peer.peer_addr, mac, 6);
@@ -59,22 +53,22 @@ esp_err_t espnow_addr_peer(const uint8_t *mac) {
 }
 
 esp_err_t espnow_send_pairing_request() {
-    espnow_request_pairing_t packet = {.type = PAIRING_REQUEST};
+    uint8_t packet = PAIRING_REQUEST;
 
     return esp_now_send(BROADCAST_MAC, (uint8_t *)&packet, sizeof(packet));
 }
 
 void espnow_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t *data, int data_len) {
-    if (!recv_info || !data || data_len != sizeof(espnow_pairing_packet_t)) {
+    if (!recv_info || !data || data_len != sizeof(uint8_t)) {
         return;
     }
 
-    espnow_pairing_packet_t *packet = (espnow_pairing_packet_t *)data;
+    uint8_t packet_type = data[0];
 
     if (packet->type == PAIRING_RESPONSE) {
         memcpy(paired_rx_mac, recv_info->src_addr, 6);
 
-        esp_err_t add_err = espnow_addr_peer(paired_rx_mac);
+        esp_err_t add_err = espnow_add_peer(paired_rx_mac);
         if (add_err != ESP_OK) {
             ESP_LOGE(TAG, "RX 피어 등록 실패 : %s", esp_err_to_name(add_err));
             return;
