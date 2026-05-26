@@ -41,6 +41,10 @@ esp_err_t espnow_init_setup(void) {
 }
 
 esp_err_t espnow_add_peer(const uint8_t *mac) {
+    if (esp_now_is_peer_exist(mac)) {
+        return ESP_OK;
+    }
+    
     esp_now_peer_info_t peer = {0};
 
     memcpy(peer.peer_addr, mac, 6);
@@ -65,7 +69,7 @@ void espnow_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t *data, i
 
     uint8_t packet_type = data[0];
 
-    if (packet->type == PAIRING_RESPONSE) {
+    if (packet_type == PAIRING_RESPONSE) {
         memcpy(paired_rx_mac, recv_info->src_addr, 6);
 
         esp_err_t add_err = espnow_add_peer(paired_rx_mac);
