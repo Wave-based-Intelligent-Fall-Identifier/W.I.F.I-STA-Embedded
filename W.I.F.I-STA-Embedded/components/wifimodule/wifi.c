@@ -3,7 +3,7 @@
 #include <math.h>
 
 static EventGroupHandle_t wifiEventGroup;
-static int retryCounts = 0;
+static uint8_t retryCounts = 0;
 static const char* TAG = "WiFi";
 QueueHandle_t csi_queue;
 

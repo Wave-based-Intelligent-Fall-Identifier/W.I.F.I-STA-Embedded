@@ -1,11 +1,12 @@
 #include "baseline_filter.h"
+#include <stdint.h>
 
-//baseline 측정 횟수
+//baseline 측정하고 싶은 횟수
 #define BASELINE_SAMPLE_COUNT 100
 
 static float baseline_sum = 0.0f;
 static float baseline_value = 0.0f;
-static int sample_count = 0;
+static uint16_t sample_count = 0; //샘플 수에 따라 8로 변경(255)
 static bool baseline_ready = false;
 
 void baseline_init(void) {

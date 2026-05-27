@@ -29,7 +29,7 @@
 #define MAXIMUM_RETRY  5
 
 typedef struct {
-    uint16_t len;
+    uint8_t len;
     int8_t raw_data[128]; 
 } csi_packet_t;
 
