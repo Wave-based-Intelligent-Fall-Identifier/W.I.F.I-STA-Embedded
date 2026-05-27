@@ -18,13 +18,14 @@ void power_ctrl(void) {
         .mode = GPIO_MODE_INPUT,
         .pull_up_en = GPIO_PULLUP_ENABLE,
     };
-    gpio_config(&io_conf);
+    ESP_ERROR_CHECK(gpio_config(&io_conf));
 
     while (1) {
         if (gpio_get_level(PIN_NUM) == 1) {
-            vTaskDelay(pdMS_TO_TICKS(50)); 
+            vTaskDelay(pdMS_TO_TICKS(50));
+
             if (gpio_get_level(PIN_NUM) == 1) {
-                esp_sleep_enable_ext0_wakeup(PIN_NUM, 0);
+                ESP_ERROR_CHECK(esp_sleep_enable_ext0_wakeup(PIN_NUM, 0));
                 esp_deep_sleep_start();
             }
         }

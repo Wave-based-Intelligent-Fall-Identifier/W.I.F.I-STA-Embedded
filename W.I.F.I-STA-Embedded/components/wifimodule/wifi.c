@@ -31,9 +31,14 @@ static void wifiHandler(void *args, esp_event_base_t eventBase, int32_t eventId,
 
         case WIFI_EVENT_STA_DISCONNECTED:
         {
-            ESP_LOGW(TAG, "연결 재시도... (횟수 : %d)", retryCounts);
-            esp_wifi_connect();
-            retryCounts++;
+            if (retryCounts < MAXIMUM_RETRY) {
+                ESP_LOGW(TAG, "연결 재시도... (횟수 : %d)", retryCounts);
+                esp_wifi_connect();
+                retryCounts++;
+            } else {
+                ESP_LOGE(TAG, "WiFi 연결 실패: 최대 재시도 횟수 초과");
+                xEventGroupSetBits(wifiEventGroup, FAIL_BIT);
+            }
         }
         break;
 
@@ -109,7 +114,7 @@ esp_err_t wifiInit(void) {
     ESP_ERROR_CHECK(esp_wifi_start());
 
     ESP_LOGI(TAG, "WiFi 초기화 성공, 연결 대기 중");
-    EventBits_t bits = xEventGroupWaitBits(wifiEventGroup, GOT_IP_BIT, pdFALSE, pdFALSE, portMAX_DELAY);
+    EventBits_t bits = xEventGroupWaitBits(wifiEventGroup, GOT_IP_BIT | FAIL_BIT, pdFALSE, pdFALSE, portMAX_DELAY);
 
     if (bits & GOT_IP_BIT) {
         ESP_LOGI(TAG, "WiFi 연결 성공, IP획득");
@@ -160,11 +165,13 @@ void csi_data_calculate(void* pvParameters) {
                 int8_t imaginary = packet.raw_data[i + 1];      
 
                 float amplitude = sqrt((real * real) + (imaginary * imaginary));
-                printf("%.2f,", amplitude);
 
                 if (!baseline_is_ready()) {
                     baseline_update(amplitude);
-                    continue;
+                    printf("%.2f,", amplitude);
+                } else {
+                    float filtered_amplitude = baseline_apply(amplitude);
+                    printf("%.2f,", filtered_amplitude);
                 }
 
                 float filtered_amplitude = baseline_apply(amplitude);
