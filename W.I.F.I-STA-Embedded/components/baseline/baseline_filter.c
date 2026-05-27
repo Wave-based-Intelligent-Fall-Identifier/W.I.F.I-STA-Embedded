@@ -1,5 +1,6 @@
 #include "baseline_filter.h"
 
+//baseline 측정 횟수
 #define BASELINE_SAMPLE_COUNT 100
 
 static float baseline_sum = 0.0f;

@@ -10,8 +10,6 @@
 
 #define PIN_NUM GPIO_NUM_13
 
-// static const char* TAG = "Power";
-
 void power_ctrl(void) {  
     gpio_config_t io_conf = {
         .pin_bit_mask = (1ULL << PIN_NUM),

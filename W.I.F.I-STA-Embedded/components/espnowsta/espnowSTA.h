@@ -37,5 +37,21 @@ esp_err_t espnow_init_setup(void);
  * @retval[out] None
  */
 void csi_rx_cb(void *ctx, wifi_csi_info_t *info);
+
+/**
+ * @brief STA 기기 페어링 요청 함수
+ * @param[in] None
+ * @retval[out] esp_err_t 상태 반환
+ *  1. ESP_OK: 성공
+ *  2. ESP_FAIL: 실패
+ */
 esp_err_t espnow_send_pairing_request(void);
+
+/**
+ * @brief AT 기기 등록 함수
+ * @param[in] const uint8_t *mac
+ * @retval[out] esp_err_t 상태 반환
+ *  1. ESP_OK: 성공
+ *  2. ESP_FAIL: 실패
+ */
 esp_err_t espnow_add_peer(const uint8_t *mac);

@@ -173,10 +173,6 @@ void csi_data_calculate(void* pvParameters) {
                     float filtered_amplitude = baseline_apply(amplitude);
                     printf("%.2f,", filtered_amplitude);
                 }
-
-                float filtered_amplitude = baseline_apply(amplitude);
-
-                printf("%.2f,", filtered_amplitude);
             }
             
             printf("\n"); 

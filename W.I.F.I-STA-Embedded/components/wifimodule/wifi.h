@@ -35,6 +35,23 @@ typedef struct {
 
 extern QueueHandle_t csi_queue;
 
+/**
+ * @brief Wi-Fi 초기화 함수
+ * @param[in] None
+ * @retval esp_err_t 오류코드 반환
+ */
 esp_err_t wifiInit(void);
+
+/**
+ * @brief CSI 수신 데이터 큐 저장 함수
+ * @param[in] void *ctx, wifi_csi_info_t *data
+ * @retval None
+ */
 void csi_callback(void *ctx, wifi_csi_info_t *data);
+
+/**
+ * @brief CSI 데이터 계산(raw CSI를 amplitude로 바꿈), 출력 함수
+ * @param[in] void* pvParameters
+ * @retval None
+ */
 void csi_data_calculate(void* pvParameters);
