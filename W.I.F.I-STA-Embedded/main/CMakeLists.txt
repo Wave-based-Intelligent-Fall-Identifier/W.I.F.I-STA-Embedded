@@ -1,5 +1,5 @@
 idf_component_register(
     SRCS "main.c"
     INCLUDE_DIRS "."
-    PRIV_REQUIRES wifimodule espnowsta
+    PRIV_REQUIRES wifimodule espnowsta baseline
 )

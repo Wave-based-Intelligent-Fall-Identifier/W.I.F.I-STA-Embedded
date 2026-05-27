@@ -37,3 +37,5 @@ esp_err_t espnow_init_setup(void);
  * @retval[out] None
  */
 void csi_rx_cb(void *ctx, wifi_csi_info_t *info);
+esp_err_t espnow_send_pairing_request(void);
+esp_err_t espnow_add_peer(const uint8_t *mac);

@@ -4,14 +4,14 @@
 
 static float baseline_sum = 0.0f;
 static float baseline_value = 0.0f;
-static int sameple_count = 0;
+static int sample_count = 0;
 static bool baseline_ready = false;
 
 void baseline_init(void) {
-    float baseline_sum = 0.0f;
-    float baseline_value = 0.0f;
-    int sameple_count = 0;
-    bool baseline_ready = false;
+    baseline_sum = 0.0f;
+    baseline_value = 0.0f;
+    sample_count = 0;
+    baseline_ready = false;
 }
 
 void baseline_update(float value) {

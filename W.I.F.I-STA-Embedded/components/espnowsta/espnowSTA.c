@@ -10,7 +10,7 @@ static const uint8_t BROADCAST_MAC[6] = {
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF
 };
 static uint8_t paired_rx_mac[6] = {0};
-static bool is_paired = false;
+// static bool is_paired = false;
 
 esp_err_t espnow_init_setup(void) {
     esp_err_t err = esp_now_init();
@@ -54,7 +54,7 @@ void espnow_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t *data, i
 
     uint8_t packet_type = data[0];
 
-    if (packet->type == PAIRING_RESPONSE) {
+    if (packet_type == PAIRING_RESPONSE) {
         memcpy(paired_rx_mac, recv_info->src_addr, 6);
 
         esp_err_t add_err = espnow_add_peer(paired_rx_mac);
@@ -63,7 +63,7 @@ void espnow_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t *data, i
             return;
         }
         
-        is_paired = true;
+        // is_paired = true;
 
         ESP_LOGI(TAG, "RX 페어링 완료");
     }

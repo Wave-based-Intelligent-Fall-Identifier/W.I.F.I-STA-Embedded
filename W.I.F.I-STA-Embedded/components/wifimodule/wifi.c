@@ -1,5 +1,5 @@
 #include "wifi.h"
-#include "baseline.h"
+#include "baseline_filter.h"
 #include <math.h>
 
 static EventGroupHandle_t wifiEventGroup;
@@ -24,7 +24,7 @@ static void wifiHandler(void *args, esp_event_base_t eventBase, int32_t eventId,
         case WIFI_EVENT_STA_CONNECTED:
         {
             ESP_LOGI(TAG, "WiFi STA 연결됨 ...");
-            xEventGroupSet(wifiEventGroup, CONNECTED_BIT);
+            xEventGroupSetBits(wifiEventGroup, CONNECTED_BIT);
             retryCounts = 0;
         }   
         break;
@@ -77,7 +77,7 @@ esp_err_t wifiInit(void) {
     }
 
     
-    static bool is_paired = false;
+    // static bool is_paired = false;
     uint8_t mac[6];
 
     esp_wifi_get_mac(WIFI_IF_STA, mac);

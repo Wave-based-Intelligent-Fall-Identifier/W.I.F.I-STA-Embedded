@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "wifi.h"
 #include "espnowSTA.h"
-#include "baseline.h"
+#include "baseline_filter.h"
 
 static const char *TAG = "Main";
 
@@ -13,7 +13,7 @@ void app_main(void) {
         ESP_LOGE(TAG, "Queue 생성 실패!");
         return;
     }
-    
+
     xTaskCreatePinnedToCore(csi_data_calculate, "CSI_TASK", 4096, NULL, 5, NULL, 1);
 
     ESP_LOGI(TAG, "시스템 시작 [0/7]...");

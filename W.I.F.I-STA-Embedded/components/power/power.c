@@ -10,7 +10,7 @@
 
 #define PIN_NUM GPIO_NUM_13
 
-static const char* TAG = "Power";
+// static const char* TAG = "Power";
 
 void power_ctrl(void) {  
     gpio_config_t io_conf = {
@@ -24,7 +24,7 @@ void power_ctrl(void) {
         if (gpio_get_level(PIN_NUM) == 1) {
             vTaskDelay(pdMS_TO_TICKS(50)); 
             if (gpio_get_level(PIN_NUM) == 1) {
-                esp_deep_sleep_enable_ext0_wakeup(PIN_NUM, 0);
+                esp_sleep_enable_ext0_wakeup(PIN_NUM, 0);
                 esp_deep_sleep_start();
             }
         }
