@@ -1,4 +1,6 @@
 #include "wifi.h"
+#include "baseline.h"
+#include <math.h>
 
 static EventGroupHandle_t wifiEventGroup;
 static int retryCounts = 0;
@@ -152,13 +154,24 @@ void csi_data_calculate(void* pvParameters) {
     
     while(1) {
         if(xQueueReceive(csi_queue, &packet, portMAX_DELAY)) {
+
             for(int i = 0; i+1 < packet.len; i+=2) {
                 int8_t real = packet.raw_data[i];
                 int8_t imaginary = packet.raw_data[i + 1];      
 
                 float amplitude = sqrt((real * real) + (imaginary * imaginary));
                 printf("%.2f,", amplitude);
+
+                if (!baseline_is_ready()) {
+                    baseline_update(amplitude);
+                    continue;
+                }
+
+                float filtered_amplitude = baseline_apply(amplitude);
+
+                printf("%.2f,", filtered_amplitude);
             }
+            
             printf("\n"); 
         }
     }
