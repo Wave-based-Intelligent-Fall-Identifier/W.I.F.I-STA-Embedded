@@ -10,7 +10,7 @@ static const uint8_t BROADCAST_MAC[6] = {
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF
 };
 static uint8_t paired_rx_mac[6] = {0};
-static bool is_paired = false;
+// static bool is_paired = false;
 
 esp_err_t espnow_init_setup(void) {
     esp_err_t err = esp_now_init();
@@ -21,18 +21,7 @@ esp_err_t espnow_init_setup(void) {
     
     ESP_ERROR_CHECK(esp_now_register_recv_cb(espnow_recv_cb));
     ESP_LOGI(TAG, "ESP-NOW 단독 세팅 완료!");
-    
-    // wifi_csi_config_t csi_config = {
-    //     .lltf_en           = true,
-    //     .htltf_en          = true,
-    //     .stbc_htltf2_en    = true,
-    //     .ltf_merge_en      = true,
-    //     .channel_filter_en = true,
-    //     .manu_scale        = false,
-    //     .shift             = false,
-    // };
-    
-    // ESP_ERROR_CHECK(esp_wifi_set_csi_config(&csi_config));
+
     ESP_LOGI(TAG, "CSI 파동 수집 세팅 완료!");
 
     ESP_ERROR_CHECK(espnow_add_peer(BROADCAST_MAC));
@@ -78,7 +67,7 @@ void espnow_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t *data, i
             return;
         }
         
-        is_paired = true;
+        // is_paired = true;
 
         ESP_LOGI(TAG, "RX 페어링 완료");
     }

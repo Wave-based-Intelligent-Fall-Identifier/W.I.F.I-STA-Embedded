@@ -38,7 +38,27 @@ esp_err_t espnow_init_setup(void);
  */
 void csi_rx_cb(void *ctx, wifi_csi_info_t *info);
 
+<<<<<<< HEAD:W.I.F.I-STA-Embedded/components/espnow/espnowSTA.h
 esp_err_t espnow_init_setup(void);
 esp_err_t espnow_add_peer(const uint8_t *mac);
 esp_err_t espnow_send_pairing_request(void);
 void espnow_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t *data, int data_len);
+=======
+/**
+ * @brief STA 기기 페어링 요청 함수
+ * @param[in] None
+ * @retval[out] esp_err_t 상태 반환
+ *  1. ESP_OK: 성공
+ *  2. ESP_FAIL: 실패
+ */
+esp_err_t espnow_send_pairing_request(void);
+
+/**
+ * @brief AT 기기 등록 함수
+ * @param[in] const uint8_t *mac
+ * @retval[out] esp_err_t 상태 반환
+ *  1. ESP_OK: 성공
+ *  2. ESP_FAIL: 실패
+ */
+esp_err_t espnow_add_peer(const uint8_t *mac);
+>>>>>>> dana_develop:W.I.F.I-STA-Embedded/components/espnowsta/espnowSTA.h

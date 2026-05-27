@@ -1,7 +1,9 @@
 #include "wifi.h"
+#include "baseline_filter.h"
+#include <math.h>
 
 static EventGroupHandle_t wifiEventGroup;
-static int retryCounts = 0;
+static uint8_t retryCounts = 0;
 static const char* TAG = "WiFi";
 QueueHandle_t csi_queue;
 
@@ -29,9 +31,14 @@ static void wifiHandler(void *args, esp_event_base_t eventBase, int32_t eventId,
 
         case WIFI_EVENT_STA_DISCONNECTED:
         {
-            ESP_LOGW(TAG, "연결 재시도... (횟수 : %d)", retryCounts);
-            esp_wifi_connect();
-            retryCounts++;
+            if (retryCounts < MAXIMUM_RETRY) {
+                ESP_LOGW(TAG, "연결 재시도... (횟수 : %d)", retryCounts);
+                esp_wifi_connect();
+                retryCounts++;
+            } else {
+                ESP_LOGE(TAG, "WiFi 연결 실패: 최대 재시도 횟수 초과");
+                xEventGroupSetBits(wifiEventGroup, FAIL_BIT);
+            }
         }
         break;
 
@@ -75,7 +82,7 @@ esp_err_t wifiInit(void) {
     }
 
     
-    static bool is_paired = false;
+    // static bool is_paired = false;
     uint8_t mac[6];
 
     esp_wifi_get_mac(WIFI_IF_STA, mac);
@@ -107,7 +114,20 @@ esp_err_t wifiInit(void) {
     ESP_ERROR_CHECK(esp_wifi_start());
 
     ESP_LOGI(TAG, "WiFi 초기화 성공, 연결 대기 중");
-    EventBits_t bits = xEventGroupWaitBits(wifiEventGroup, GOT_IP_BIT, pdFALSE, pdFALSE, portMAX_DELAY);
+    EventBits_t bits = xEventGroupWaitBits(wifiEventGroup, GOT_IP_BIT | FAIL_BIT, pdFALSE, pdFALSE, portMAX_DELAY);
+
+    if (bits & GOT_IP_BIT) {
+        ESP_LOGI(TAG, "WiFi 연결 성공, IP획득");
+        return ESP_OK;
+    } 
+    else if (bits & FAIL_BIT) {
+        ESP_LOGE(TAG, "WiFi 연결 실패");
+        return ESP_FAIL;
+    } 
+    else {
+        ESP_LOGE(TAG, "예상치 못한 에러 발생");
+        return ESP_FAIL;
+    }
 
     return ESP_OK;
 }
@@ -139,13 +159,22 @@ void csi_data_calculate(void* pvParameters) {
     
     while(1) {
         if(xQueueReceive(csi_queue, &packet, portMAX_DELAY)) {
+
             for(int i = 0; i+1 < packet.len; i+=2) {
                 int8_t real = packet.raw_data[i];
                 int8_t imaginary = packet.raw_data[i + 1];      
 
                 float amplitude = sqrt((real * real) + (imaginary * imaginary));
-                printf("%.2f,", amplitude);
+
+                if (!baseline_is_ready()) {
+                    baseline_update(amplitude);
+                    printf("%.2f,", amplitude);
+                } else {
+                    float filtered_amplitude = baseline_apply(amplitude);
+                    printf("%.2f,", filtered_amplitude);
+                }
             }
+            
             printf("\n"); 
         }
     }
