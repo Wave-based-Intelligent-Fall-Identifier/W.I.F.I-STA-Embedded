@@ -24,8 +24,8 @@
 #define  GOT_IP_BIT         BIT2
 #define  FAIL_BIT           BIT4
 
-#define WIFI_SSID      "k"
-#define WIFI_PASS      "ericeric0223"
+#define WIFI_SSID      "dd"
+#define WIFI_PASS      "ekdus825"
 #define MAXIMUM_RETRY  5
 
 typedef struct {
