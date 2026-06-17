@@ -2,7 +2,6 @@
 #include "baseline_filter.h"
 #include <math.h>
 
-static EventGroupHandle_t wifiEventGroup;
 static const char* TAG = "WiFi";
 QueueHandle_t csi_queue;
 
@@ -27,7 +26,6 @@ static void wifiHandler(void *args, esp_event_base_t eventBase, int32_t eventId,
 
 esp_err_t wifiInit(void) {
     esp_err_t err;
-    wifiEventGroup = xEventGroupCreate();
 
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
