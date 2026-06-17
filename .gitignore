@@ -1,0 +1,17 @@
+# 빌드 산출물 (내부 프로젝트의 build/ 등은 프로젝트 .gitignore 에서도 무시)
+**/build/
+*.bin
+*.elf
+*.map
+
+# ESP-IDF 생성물
+sdkconfig.old
+managed_components/
+
+# 툴/에디터/세션 잡파일
+.omc/
+.metadata/
+tool_set_config.json
+.DS_Store
+Thumbs.db
+*.log
