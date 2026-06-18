@@ -13,6 +13,7 @@
 #include "esp_log.h"
 
 #include "esp_wifi.h"
+#include "esp_mac.h"
 #include "esp_netif.h"
 #include "esp_flash.h"
 #include "lwip/err.h"
@@ -20,13 +21,8 @@
 
 #include "nvs_flash.h"
 
-#define  CONNECTED_BIT      BIT0
-#define  GOT_IP_BIT         BIT2
-#define  FAIL_BIT           BIT4
-
-#define WIFI_SSID      "k"
-#define WIFI_PASS      "ericeric0223"
-#define MAXIMUM_RETRY  5
+#define WIFI_SSID      "dd"
+#define WIFI_PASS      "ekdus825"
 
 typedef struct {
     uint8_t len;
