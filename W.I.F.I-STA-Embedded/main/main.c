@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include "wifi.h"
-#include "espnowSTA.h"
+#include "espnowAP.h"
 #include "baseline_filter.h"
 
 static const char *TAG = "Main";
@@ -16,26 +16,25 @@ void app_main(void) {
 
     xTaskCreatePinnedToCore(csi_data_calculate, "CSI_TASK", 4096, NULL, 5, NULL, 1);
 
-    ESP_LOGI(TAG, "시스템 시작 [0/7]...");
+    ESP_LOGI(TAG, "시스템 시작 [0/6]...");
 
     ESP_ERROR_CHECK(wifiInit());
-    ESP_LOGI(TAG, "WiFi 초기화 [1/7]...");
+    ESP_LOGI(TAG, "WiFi(AP) 초기화 [1/6]...");
 
-    ESP_LOGI(TAG, "ESP-NOW 초기화 설정 [2/7]...");
+    ESP_LOGI(TAG, "ESP-NOW 초기화 설정 [2/6]...");
     ESP_ERROR_CHECK(espnow_init_setup());
 
-    ESP_LOGI(TAG, "CSI 수신 모드 시작 [3/7]...");
+    // promiscuous(무차별 수신) 모드: 채널의 모든 패킷을 받아 CSI 추출이 가능해진다.
+    // AP 채널은 wifi_config.ap.channel=6 으로 이미 고정돼 별도 set_channel 불필요.
+    ESP_LOGI(TAG, "Promiscuous(무차별 수신) 모드 시작 [3/6]...");
     ESP_ERROR_CHECK(esp_wifi_set_promiscuous(true));
-    
-    ESP_LOGI(TAG, "WiFi 채널 설정 [4/7]...");
-    ESP_ERROR_CHECK(esp_wifi_set_channel(6, WIFI_SECOND_CHAN_NONE));
 
-    ESP_LOGI(TAG, "페어링 중..[5/7]");
+    ESP_LOGI(TAG, "페어링 요청 송신 [4/6]...");
     ESP_ERROR_CHECK(espnow_send_pairing_request());
-    
-    ESP_LOGI(TAG, "콜백함수 등록 및 CSI 활성 [6/7]...");
+
+    ESP_LOGI(TAG, "콜백 등록 및 CSI 활성 [5/6]...");
     ESP_ERROR_CHECK(esp_wifi_set_csi_rx_cb(&csi_callback, NULL));
     ESP_ERROR_CHECK(esp_wifi_set_csi(true));
 
-    ESP_LOGI(TAG, "설정 완료 [7/7]...");
+    ESP_LOGI(TAG, "설정 완료 [6/6]...");
 }

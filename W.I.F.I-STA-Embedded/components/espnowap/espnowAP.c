@@ -1,0 +1,43 @@
+#include "espnowAP.h"
+
+#include <string.h>
+
+#include "esp_now.h"
+#include "esp_wifi.h"
+#include "esp_log.h"
+
+static const char* TAG = "ESP-NOW-AP";
+
+static const uint8_t BROADCAST_MAC[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+
+esp_err_t espnow_init_setup(void) {
+    esp_err_t err = esp_now_init();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "ESP-NOW 초기화 실패");
+        return err;
+    }
+
+    esp_now_peer_info_t peer = {0};
+    memcpy(peer.peer_addr, BROADCAST_MAC, sizeof(BROADCAST_MAC));
+    peer.channel = 0;          // 0 = 현재 WiFi 채널 사용
+    peer.ifidx   = WIFI_IF_AP; // AP 인터페이스로 송신
+    peer.encrypt = false;
+
+    err = esp_now_add_peer(&peer);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "브로드캐스트 피어 등록 실패");
+        return err;
+    }
+
+    ESP_LOGI(TAG, "ESP-NOW 초기화 완료");
+    return ESP_OK;
+}
+
+esp_err_t espnow_send_pairing_request(void) {
+    uint8_t payload = 0; // 페어링 요청 신호
+    esp_err_t err = esp_now_send(BROADCAST_MAC, &payload, sizeof(payload));
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "페어링 요청 송신 실패");
+    }
+    return err;
+}
