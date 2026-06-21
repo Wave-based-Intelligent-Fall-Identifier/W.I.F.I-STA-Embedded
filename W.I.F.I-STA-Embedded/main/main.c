@@ -21,6 +21,9 @@ void app_main(void) {
     ESP_ERROR_CHECK(wifiInit());
     ESP_LOGI(TAG, "WiFi(AP) 초기화 [1/6]...");
 
+    // AT(STA) 가 붙기 전까지 "AT 연결 대기 중..." 을 주기 출력(접속되면 자동 중단).
+    xTaskCreate(wait_at_task, "WAIT_AT_TASK", 2048, NULL, 4, NULL);
+
     ESP_LOGI(TAG, "ESP-NOW 초기화 설정 [2/6]...");
     ESP_ERROR_CHECK(espnow_init_setup());
 

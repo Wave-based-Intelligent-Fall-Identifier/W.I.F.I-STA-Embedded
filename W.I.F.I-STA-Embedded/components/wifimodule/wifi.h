@@ -21,7 +21,7 @@
 
 #include "nvs_flash.h"
 
-#define WIFI_SSID      "dd"
+#define WIFI_SSID      "wify_csi_ap"
 #define WIFI_PASS      "ekdus825"
 
 typedef struct {
@@ -30,6 +30,9 @@ typedef struct {
 } csi_packet_t;
 
 extern QueueHandle_t csi_queue;
+
+/** AT(STA) 접속 여부 — true=접속됨, false=대기 중. wifiHandler 가 갱신. */
+extern volatile bool at_connected;
 
 /**
  * @brief Wi-Fi 초기화 함수
@@ -51,3 +54,10 @@ void csi_callback(void *ctx, wifi_csi_info_t *data);
  * @retval None
  */
 void csi_data_calculate(void* pvParameters);
+
+/**
+ * @brief AT(STA) 미접속 시 "AT 연결 대기 중..." 로그를 주기 출력하는 태스크
+ * @param[in] void* pvParameters
+ * @retval None
+ */
+void wait_at_task(void* pvParameters);

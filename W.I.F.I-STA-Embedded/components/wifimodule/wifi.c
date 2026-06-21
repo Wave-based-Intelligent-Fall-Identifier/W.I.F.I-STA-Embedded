@@ -5,9 +5,12 @@
 static const char* TAG = "WiFi";
 QueueHandle_t csi_queue;
 
+// AT(STA) 접속 여부 — wifiHandler 가 갱신, wait_at_task 가 대기 로그 출력에 사용.
+volatile bool at_connected = false;
+
 //printf된 TX MAC ADDRESS 값 삽입
 static const uint8_t TX_MAC_ADDRESS[6] = {
-    0x34, 0x85, 0x18, 0xAA, 0xBB, 0xCC
+    0x78, 0x1C, 0x3C, 0xF4, 0xAF, 0xF4
 };
 
 static void wifiHandler(void *args, esp_event_base_t eventBase, int32_t eventId, void* eventData) {
@@ -16,10 +19,12 @@ static void wifiHandler(void *args, esp_event_base_t eventBase, int32_t eventId,
     }
     else if (eventId == WIFI_EVENT_AP_STACONNECTED) {
         wifi_event_ap_staconnected_t* event = (wifi_event_ap_staconnected_t*) eventData;
+        at_connected = true;
         ESP_LOGI(TAG, "장치 접속됨 MAC: " MACSTR ", AID: %d", MAC2STR(event->mac), event->aid);
     }
     else if (eventId == WIFI_EVENT_AP_STADISCONNECTED) {
         wifi_event_ap_stadisconnected_t* event = (wifi_event_ap_stadisconnected_t*) eventData;
+        at_connected = false;
         ESP_LOGI(TAG, "장치 연결 끊김 MAC: " MACSTR ", AID: %d", MAC2STR(event->mac), event->aid);
     }
 }
@@ -96,6 +101,11 @@ void csi_callback(void *ctx, wifi_csi_info_t *data) {
         return;
     }
 
+    // 빈/비정상 길이 패킷(amplitude 한 쌍도 못 만드는 것) 드롭 — 빈 값 방지
+    if (data->len < 2) {
+        return;
+    }
+
     const uint8_t*sender_mac = data->mac;
 
     if (memcmp(TX_MAC_ADDRESS, sender_mac, 6) != 0) {
@@ -119,6 +129,11 @@ void csi_data_calculate(void* pvParameters) {
     while(1) {
         if(xQueueReceive(csi_queue, &packet, portMAX_DELAY)) {
 
+            // 유효 데이터가 없으면 빈 줄을 찍지 않고 버린다
+            if (packet.len < 2) {
+                continue;
+            }
+
             for(int i = 0; i+1 < packet.len; i+=2) {
                 int8_t real = packet.raw_data[i];
                 int8_t imaginary = packet.raw_data[i + 1];      
@@ -134,7 +149,16 @@ void csi_data_calculate(void* pvParameters) {
                 }
             }
             
-            printf("\n"); 
+            printf("\n");
         }
+    }
+}
+
+void wait_at_task(void* pvParameters) {
+    while (1) {
+        if (!at_connected) {
+            ESP_LOGI(TAG, "AT 연결 대기 중...");
+        }
+        vTaskDelay(pdMS_TO_TICKS(2000));
     }
 }
