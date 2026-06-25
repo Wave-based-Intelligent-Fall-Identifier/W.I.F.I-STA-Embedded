@@ -61,3 +61,9 @@ void csi_data_calculate(void* pvParameters);
  * @retval None
  */
 void wait_at_task(void* pvParameters);
+
+/** 내장 LED 로 통신 상태(AT 접속·CSI 수신) 표시 태스크 */
+void status_led_task(void* pvParameters);
+
+/** 유효 CSI 프레임 수신 카운터 (LED "통신 중" 표시용) */
+extern volatile uint32_t g_csi_rx_count;

@@ -1,12 +1,18 @@
 #include "wifi.h"
 #include "baseline_filter.h"
 #include <math.h>
+#include "driver/gpio.h"
+
+// 보드 내장 LED 핀(대부분 ESP32 보드 GPIO2). 보드가 다르면 이 값만 바꾸면 됨.
+#define STATUS_LED_PIN 2
 
 static const char* TAG = "WiFi";
 QueueHandle_t csi_queue;
 
 // AT(STA) 접속 여부 — wifiHandler 가 갱신, wait_at_task 가 대기 로그 출력에 사용.
 volatile bool at_connected = false;
+// 유효 CSI 프레임(AT 송신분) 수신 카운터 — status_led_task 가 "통신 중" 깜빡임에 사용.
+volatile uint32_t g_csi_rx_count = 0;
 
 //printf된 TX MAC ADDRESS 값 삽입
 static const uint8_t TX_MAC_ADDRESS[6] = {
@@ -109,8 +115,10 @@ void csi_callback(void *ctx, wifi_csi_info_t *data) {
     const uint8_t*sender_mac = data->mac;
 
     if (memcmp(TX_MAC_ADDRESS, sender_mac, 6) != 0) {
-        return; 
+        return;
     }
+
+    g_csi_rx_count++;   // AT 로부터 유효 CSI 프레임 수신 → LED "통신 중" 표시용
 
     csi_packet_t packet = {0};
     packet.len = data->len;
@@ -125,7 +133,14 @@ void csi_callback(void *ctx, wifi_csi_info_t *data) {
 
 void csi_data_calculate(void* pvParameters) {
     csi_packet_t packet;
-    
+
+    // CSI 값의 의미 안내(시작 시 1회 + 50줄마다 재출력)
+    static const char *CSI_LEGEND =
+        "[CSI 안내] 한 줄=한 시점의 채널 스냅샷 | scN:값 = N번 서브캐리어(주파수)의 진폭 sqrt(I^2+Q^2) | "
+        "RAW=기준선 학습중(raw 진폭), FILT=기준선 감산(움직임 변화량) | 양끝 scN(약 -20.x)=guard/null(무신호 구간)";
+    int line_cnt = 0;
+    printf("%s\n", CSI_LEGEND);
+
     while(1) {
         if(xQueueReceive(csi_queue, &packet, portMAX_DELAY)) {
 
@@ -134,21 +149,32 @@ void csi_data_calculate(void* pvParameters) {
                 continue;
             }
 
+            // 50줄마다 안내 줄 재출력(스크롤되어도 의미를 다시 볼 수 있게)
+            if (line_cnt % 50 == 0) {
+                printf("%s\n", CSI_LEGEND);
+            }
+            line_cnt++;
+
+            // 줄 앞 모드 표시: RAW=기준선 학습 중(raw 진폭), FILT=기준선 감산값
+            // 각 값은 sc{번호}:{진폭} 형태로 어떤 서브캐리어인지 보이게 출력
+            printf("%s| ", baseline_is_ready() ? "FILT" : "RAW ");
+
             for(int i = 0; i+1 < packet.len; i+=2) {
+                int sc = i / 2;                    // 서브캐리어 인덱스 (0,1,2,...)
                 int8_t real = packet.raw_data[i];
-                int8_t imaginary = packet.raw_data[i + 1];      
+                int8_t imaginary = packet.raw_data[i + 1];
 
                 float amplitude = sqrt((real * real) + (imaginary * imaginary));
 
                 if (!baseline_is_ready()) {
                     baseline_update(amplitude);
-                    printf("%.2f,", amplitude);
+                    printf("sc%d:%.2f ", sc, amplitude);
                 } else {
                     float filtered_amplitude = baseline_apply(amplitude);
-                    printf("%.2f,", filtered_amplitude);
+                    printf("sc%d:%.2f ", sc, filtered_amplitude);
                 }
             }
-            
+
             printf("\n");
         }
     }
@@ -160,5 +186,37 @@ void wait_at_task(void* pvParameters) {
             ESP_LOGI(TAG, "AT 연결 대기 중...");
         }
         vTaskDelay(pdMS_TO_TICKS(2000));
+    }
+}
+
+/**
+ * @brief 내장 LED 로 통신 상태 표시
+ *   - AT 미접속        : 꺼짐
+ *   - 접속 + CSI 수신중 : 깜빡임(통신 중)
+ *   - 접속됐으나 데이터X : 꺼짐
+ */
+void status_led_task(void* pvParameters) {
+    gpio_config_t led = {
+        .pin_bit_mask = (1ULL << STATUS_LED_PIN),
+        .mode = GPIO_MODE_OUTPUT,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE,
+    };
+    gpio_config(&led);
+
+    uint32_t last = 0;
+    int level = 0;
+    while (1) {
+        vTaskDelay(pdMS_TO_TICKS(100));
+        if (!at_connected) {
+            level = 0;                      // 링크 없음 → 꺼짐
+        } else if (g_csi_rx_count != last) {
+            last = g_csi_rx_count;
+            level ^= 1;                     // CSI 수신 중 → 깜빡임
+        } else {
+            level = 0;                      // 접속됐으나 데이터 없음 → 꺼짐
+        }
+        gpio_set_level(STATUS_LED_PIN, level);
     }
 }
